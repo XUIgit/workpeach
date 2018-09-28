@@ -678,3 +678,36 @@ class AgvPos(db.Model):
 
     def update(self):
         db.session.commit()
+
+
+##########################################################################################################################################################
+'''重新构建的新的模型'''
+
+# 管理设备配置的表主要是采集设备
+class EquipmentModel(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    unique_id = db.Column(db.String(16), unique=True)
+    ip = db.Column(db.String(16), unique=False, nullable=False)
+    port = db.Column(db.Integer, nullable=False)
+    route = db.Column(db.String(64), unique=True, nullable=False)
+    type = db.Column(db.String(64), unique=False, nullable=False)
+    name = db.Column(db.String(64), nullable=False)
+    equipment_id = db.Column(db.String(16), nullable=True)  # 此设备 所连接(包含)的设备
+    exist_status = db.Column(db.String(16), nullable=False)  # normal delete表示设备已删除
+
+    def __init__(self, unique_id, ip, port, type, name, equipment_id, exist_status):
+        self.unique_id = unique_id
+        self.ip = ip
+        self.port = port
+        self.route = str(ip) + ':' + str(port)
+        self.type = type
+        self.name = name
+        self.equipment_id = equipment_id
+        self.exist_status = exist_status  # normal delete表示设备已删除
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def commit(self):
+        db.session.commit()
