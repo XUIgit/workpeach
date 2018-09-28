@@ -65,6 +65,8 @@ if not user.User.query.first():
 
 import count_statistics  # 导入定期统计模块
 
+import test
+
 if __name__ == '__main__':
     agv.getAgvData()
     application.run(host=application.config['HOST'], port=application.config['PORT'], use_reloader=False)

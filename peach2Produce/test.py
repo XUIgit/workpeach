@@ -15,3 +15,7 @@ def test_operation():
             return flg+':'+content
         else:
             return utils.encrypt_json({'name':'ok','content':'解析成功,命令生效'})
+
+
+#测试新添加的内容
+
