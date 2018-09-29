@@ -692,7 +692,6 @@ class EquipmentModel(db.Model):
     type = db.Column(db.String(64), unique=False, nullable=False)
     name = db.Column(db.String(64), nullable=False)
     son_equipment_id = db.Column(db.String(16), nullable=True)  # 此设备 所连接(包含)的设备
-    exist_status = db.Column(db.String(16), nullable=False)  # normal delete表示设备已删除
 
     def __init__(self, ip=None, port=None, type=None, name=None, son_equipment_id=None):
         self.unique_id = randomStr(16)
@@ -701,7 +700,6 @@ class EquipmentModel(db.Model):
         self.type = type
         self.name = name
         self.son_equipment_id = son_equipment_id
-        self.exist_status = 'normal'  # normal delete表示设备已删除
 
     def save(self):
         db.session.add(self)

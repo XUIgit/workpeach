@@ -1,5 +1,10 @@
 from app import db
 from models import EquipmentModel
+from datamodels import CollectedDatas
+import socket
+import time
+import signalsPool
+import threading
 
 '''
 通过EquipmentManager.Getinstance() 从数据库中初始化相应的实例 通过GetAllColletcors等获取初始完成的设备list
@@ -14,6 +19,7 @@ class Equipment:
     def __init__(self,sql_model, exist_in_db=True):
         self.__sql_model = sql_model
         self.__exist_in_db = exist_in_db
+        self.status = 'stop'
 
     def save(self):
         if self.__exist_in_db:#存在于数据库中直接提交更新
@@ -26,17 +32,6 @@ class Equipment:
     @property
     def id(self):
         return self.__sql_model.id
-
-    @property
-    def exist_status(self):
-        return self.__sql_model.exist_status
-
-    @exist_status.setter
-    def exist_status(self, value):
-        if type(value) == str:
-            self.__sql_model.exist_status = value
-        else:
-            raise ValueError("exist_status's type is str")
 
     @property
     def unique_id(self):
@@ -99,8 +94,10 @@ class Equipment:
 class WeldingEquipment(Equipment):
     '''焊接设备的基类'''
 
-    def GetCollector(self):
+    def GetCollector(self):#返回该设备连接的采集器
         if not self.__collector:
+            if not self.son_equipment_id:#不存在collector
+                return None
             #第一次调用此函数
             for collector in EquipmentManager.GetInstance().GetAllCollectors():
                 if collector.unique_id == self.son_equipment_id:
@@ -138,7 +135,57 @@ class Collector(Equipment):
         pass
 
     def run(self):
-        pass
+        self.thread = threading.Thread(target=Collector.__socket_run,args=(self,))
+        self.thread.start()
+
+    def __socket_run(self):
+        '''执行tcp通信和数据储存的线程函数'''
+        sc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            self.status = "connecting"
+            sc.connect((self.ip, self.port))
+        except Exception as e:
+            print(e)
+
+        for try_times in range(1, 3):
+            try:
+                self.status = "reconnecting"
+                sc.connect((self.ip, self.port))
+            except Exception as err:
+                print('err:' + str(err))
+                print(self.name+' 连接异常 尝试重新连接{}次'.format(try_times))
+                time.sleep(1)
+
+        last_v = 0
+        last_e = 0
+        collected_num_thershold = 0
+        while True:
+            try:
+                data = sc.recv(8)
+                e = (data[2] * 256 + data[3]) / 100  # 文档中电压与电流 与实际相反
+                v = (data[0] * 256 + data[1]) / 100
+                t = (data[4] * 256 + data[5]) / 100
+
+                if (v != 0 or e != 0) and (last_v == 0 and last_e == 0):
+                    signalsPool.ROBOT_START.send(id, time=time.time())
+                if (v == 0 or e == 0) and (last_v != 0 and last_e != 0):
+                    signalsPool.ROBOT_STOP.send(id, time=time.time())
+                last_v = v
+                last_e = e
+                collected_num_thershold += 1
+                if collected_num_thershold >= 100:
+                    #建立好产品模型后在来处理
+                    #one = CollectedDatas(unique_id, productId, e, v, t, produce_status, robotId)
+                    #one.save()
+                    collected_num_thershold = 0
+            except socket.error as e:
+                print(e)
+                self.status = "stop"
+                return
+            except Exception as err:
+                print('err:' + str(err))
+                self.status = "stop"
+                return
 
 
 class WeldingGun(WeldingEquipment):
@@ -205,7 +252,6 @@ class EquipmentManager:
             EquipmentManager.__instance.__robots = EquipmentFactory.GetAllEquipments("robot")
             EquipmentManager.__instance.__cuttingmachines = EquipmentFactory.GetAllEquipments("cuttingmachine")
             EquipmentManager.__instance.__weldingguns = EquipmentFactory.GetAllEquipments("weldinggun")
-
         return EquipmentManager.__instance
 
     #添加新设备并返回对象
@@ -226,6 +272,22 @@ class EquipmentManager:
         elif type == 'weldinggun':
             self.__weldingguns.append(e)
         return e
+    #删除设备
+    def DeleteEquipment(self, equipment):
+        #从相应的设备列表中删除
+        if type(equipment) == Collector:
+            self.__collectors.remove(equipment)
+        elif type(equipment) == Robot:
+            self.__robots.remove(equipment)
+        elif type(equipment) == CuttingMachine:
+            self.__cuttingmachines.remove(equipment)
+        elif type(equipment) == WeldingGun:
+            self.__weldingguns.remove(equipment)
+        else:
+            raise ValueError("equipment must be a instance of Euipment")
+        #从数据库中删除
+        db.session.delete(equipment)
+        db.session.commit()
 
     def GetAllCollectors(self):
         return self.__collectors
