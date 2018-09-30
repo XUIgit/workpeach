@@ -684,7 +684,7 @@ class AgvPos(db.Model):
 '''重新构建的新的模型'''
 
 # 储存设备信息表
-class EquipmentModel(db.Model):
+class EquipmentInfo(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     unique_id = db.Column(db.String(16), unique=True)
     ip = db.Column(db.String(16), unique=False, nullable=False)
@@ -703,6 +703,32 @@ class EquipmentModel(db.Model):
 
     def save(self):
         db.session.add(self)
+        db.session.commit()
+
+    def commit(self):
+        db.session.commit()
+
+#储存产品信息的表
+class ProductionInfo:
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    technology_id = db.Column(db.String(16), unique=False, nullable=False)
+    production_id = db.Column(db.String(16), unique=False, nullable=False)
+    production_category = db.Column(db.String(16), unique=False, nullable=False)
+    equipment_id = db.Column(db.String(16), unique=False, nullable=False)
+    production_state = db.Column(db.String(16), unique=False, nullable=False)
+
+    def __init__(self, technology_id, production_id, production_category, equipment_id, production_state):
+        self.technology_id = technology_id
+        self.production_id = production_id
+        self.production_category = production_category
+        self.production_state = production_state
+        self.equipment_id = equipment_id
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
         db.session.commit()
 
     def commit(self):

@@ -1,5 +1,5 @@
 from app import db
-from models import EquipmentModel
+from models import EquipmentInfo
 from datamodels import CollectedDatas
 import socket
 import time
@@ -28,10 +28,6 @@ class Equipment:
             db.session.add(self.__sql_model)
             db.session.commit()
             self.__exist_in_db = True
-
-    @property
-    def id(self):
-        return self.__sql_model.id
 
     @property
     def unique_id(self):
@@ -135,8 +131,9 @@ class Collector(Equipment):
         pass
 
     def run(self):
-        self.thread = threading.Thread(target=Collector.__socket_run,args=(self,))
-        self.thread.start()
+        if self.status == 'stop':
+            self.thread = threading.Thread(target=Collector.__socket_run,args=(self,))
+            self.thread.start()
 
     def __socket_run(self):
         '''执行tcp通信和数据储存的线程函数'''
@@ -220,7 +217,7 @@ class EquipmentFactory:
         if not type in EquipmentFactory.types:
             raise ValueError("type not found")
         re = []
-        equipments = EquipmentModel.query.filter_by(type=type)
+        equipments = EquipmentInfo.query.filter_by(type=type)
         for equipment in equipments:
             eq = eval(type.capitalize()+"(equipment)")
             re.append(eq)
@@ -232,7 +229,7 @@ class EquipmentFactory:
         if not type in EquipmentFactory.types:
             raise ValueError("type not found")
         else:
-            sql_model = EquipmentModel(type=type)
+            sql_model = EquipmentInfo(type=type)
             return eval(type.capitalize()+"(sql_model,False)")
 
 class EquipmentManager:
@@ -252,6 +249,7 @@ class EquipmentManager:
             EquipmentManager.__instance.__robots = EquipmentFactory.GetAllEquipments("robot")
             EquipmentManager.__instance.__cuttingmachines = EquipmentFactory.GetAllEquipments("cuttingmachine")
             EquipmentManager.__instance.__weldingguns = EquipmentFactory.GetAllEquipments("weldinggun")
+            EquipmentManager.__instance.__allequipments = EquipmentManager.__instance.__collectors + EquipmentManager.__instance.__robots + EquipmentManager.__instance.__cuttingmachines + EquipmentManager.__instance.__weldingguns
         return EquipmentManager.__instance
 
     #添加新设备并返回对象
@@ -271,9 +269,13 @@ class EquipmentManager:
             self.__cuttingmachines.append(e)
         elif type == 'weldinggun':
             self.__weldingguns.append(e)
+        else:
+            raise ValueError("type error")
+        self.__allequipments.append(e)
         return e
     #删除设备
-    def DeleteEquipment(self, equipment):
+    def DeleteEquipment(self, unique_id):
+        equipment = self.GetEquipmentById(unique_id)
         #从相应的设备列表中删除
         if type(equipment) == Collector:
             self.__collectors.remove(equipment)
@@ -285,9 +287,21 @@ class EquipmentManager:
             self.__weldingguns.remove(equipment)
         else:
             raise ValueError("equipment must be a instance of Euipment")
+        self.__allequipments.remove(equipment)
         #从数据库中删除
         db.session.delete(equipment)
         db.session.commit()
+
+    def GetEquipmentById(self, unique_id):
+        '''根据设备id返回已经加载到了程序中的设备对象'''
+        for equipment in self.GetAllEquipments():
+            if equipment.unique_id == unique_id:
+                return equipment
+        print("没有找到 "+unique_id+" 的设备")
+        return None
+
+    def GetAllEquipments(self):
+        return self.__allequipments
 
     def GetAllCollectors(self):
         return self.__collectors
