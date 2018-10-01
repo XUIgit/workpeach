@@ -4,7 +4,6 @@ from sqlalchemy import Table, MetaData, Column, Integer, String, Float, desc, fu
 import datetime
 import time
 
-
 # 用于管理采集到的数据的模型
 class CollectedDatas(db.Model):
     __mapper_args__ = {
@@ -83,6 +82,36 @@ class CollectedAgvDatas(db.Model):
         self.x = x
         self.y = y
         self.z = z
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+########################################################################################################################################
+#重构模型
+
+class CollectionDatas:
+    __mapper_args__ = {
+        "order_by": desc('time')
+    }
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    electricity = db.Column(db.Float, unique=False)
+    voltage = db.Column(db.Float, unique=False)
+    temperature = db.Column(db.Float, unique=False)
+    production_Id = db.Column(db.Integer, unique=False, nullable=True)
+    equipment_id = db.Column(db.String(16), unique=False)
+    time = db.Column(db.DateTime, unique=False, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
+    production_state = db.Column(db.String(16), unique=False, nullable=True)
+
+    def __init__(self, equipment_id, production_Id, electricity, voltage, temperature, production_state):
+        self.electricity = electricity
+        self.voltage = voltage
+        self.temperature = temperature
+
+        self.production_Id = production_Id
+        self.equipment_id = equipment_id
+        self.time = datetime.datetime.now()
+        self.production_state = production_state
 
     def save(self):
         db.session.add(self)

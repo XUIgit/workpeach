@@ -1,6 +1,11 @@
-from Equipments import EquipmentManager
+# -*- coding: utf-8 -*-
 from utils import randomStr
 from models import ProductionInfo
+from Business.Equipments import EquipmentManager
+
+'''
+基本原则，尽量调用Manager里的操作函数，而不是相应对象本身的
+'''
 
 class WorkingProcedure:
     '''工序类  工序类中包含具体工艺流程'''
@@ -14,6 +19,7 @@ class Production:
         self.__equipment_id = equipment_id
         self.__technology_id = technology_id
         self.__state = "producing"
+        self.__sql_model = None
 
     def __InitProduction(self):
         '''
@@ -26,9 +32,20 @@ class Production:
         self.equipment = EquipmentManager.GetInstance().GetEquipmentById(self.__equipment_id)
 
     def Save(self):
-        '''将产品信息写入数据库'''
-        pm = ProductionInfo(self.__technology_id, self.__production_id,self.__production_category, self.__equipment_id, self.__state)
-        pm.save()
+        '''将产品信息写入数据库, 不需要手动调用，应该调用manager的SaveProduction '''
+        if not self.__sql_model:
+            self.__sql_model = ProductionInfo(self.__technology_id, self.__production_id,self.__production_category, self.__equipment_id, self.__state)
+            self.__sql_model.save()
+        else:
+            self.__sql_model.update()
+
+    @property
+    def production_id(self):
+        return self.__production_id
+
+    @property
+    def equipment_id(self):
+        return self.__equipment_id
 
     @property
     def state(self):
@@ -36,6 +53,8 @@ class Production:
 
     @state.setter
     def state(self, value):
+        if self.__sql_model:
+            self.__sql_model.production_state = value
         self.__state = value
 
 class ProductionManager:
@@ -53,5 +72,17 @@ class ProductionManager:
             ProductionManager.__instance.__current_productions = [] #留个接口 用append和pop来添加删除 虽然现在同一时间只能生产一个产品
         return ProductionManager.__instance
 
-    def AddProduction(self, production):
+    def AddProduction(self, production_category, technology_id, equipment_id):
+        production = Production(production_category, technology_id, equipment_id)
+        production.Save()
         self.__current_productions.append(production)
+        return production
+
+    def GetProductionById(self, production_id):
+        for production in self.__current_productions:
+            if production.production_id == production_id:
+                return production
+
+    def RemoveProduction(self, production):
+        '''从程序中移除程序'''
+        self.__current_productions.remove(production)

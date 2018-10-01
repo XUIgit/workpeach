@@ -705,6 +705,9 @@ class EquipmentInfo(db.Model):
         db.session.add(self)
         db.session.commit()
 
+    def update(self):
+        db.session.commit()
+
     def commit(self):
         db.session.commit()
 

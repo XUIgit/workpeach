@@ -1,12 +1,14 @@
+# -*- coding: utf-8 -*-
 from app import db
 from models import EquipmentInfo
-from datamodels import CollectedDatas
+from datamodels import CollectionDatas
 import socket
 import time
 import signalsPool
 import threading
 
 '''
+基本原则，尽量调用Manager里的操作函数，而不是相应对象本身的
 通过EquipmentManager.Getinstance() 从数据库中初始化相应的实例 通过GetAllColletcors等获取初始完成的设备list
 修改过的设备对象通过save方法同步到数据库修改
 尽量通过EquipemtFactory产生新的设备对象 然后通过save方法新增到数据库
@@ -128,12 +130,15 @@ class Collector(Equipment):
 
     def __init__(self, sql_model, exist_in_db=True):
         Equipment.__init__(self, sql_model, exist_in_db)
-        pass
+        self.working_production = None
 
     def run(self):
         if self.status == 'stop':
             self.thread = threading.Thread(target=Collector.__socket_run,args=(self,))
             self.thread.start()
+
+    def SetWorkProduction(self, production):
+        self.working_production = production
 
     def __socket_run(self):
         '''执行tcp通信和数据储存的线程函数'''
@@ -148,6 +153,7 @@ class Collector(Equipment):
             try:
                 self.status = "reconnecting"
                 sc.connect((self.ip, self.port))
+                self.status = "running"
             except Exception as err:
                 print('err:' + str(err))
                 print(self.name+' 连接异常 尝试重新连接{}次'.format(try_times))
@@ -172,8 +178,15 @@ class Collector(Equipment):
                 collected_num_thershold += 1
                 if collected_num_thershold >= 100:
                     #建立好产品模型后在来处理
-                    #one = CollectedDatas(unique_id, productId, e, v, t, produce_status, robotId)
-                    #one.save()
+                    if not self.working_production:
+                        print(self.unique_id + "Collecotrs 没有要生产的产品")
+                        one = CollectionDatas(self.unique_id, None, e, v, t,
+                                              None)
+                        one.save()
+                    else:
+                        one = CollectionDatas(self.unique_id, self.working_production.production_id, e, v, t,
+                                              self.working_production.state)
+                        one.save()
                     collected_num_thershold = 0
             except socket.error as e:
                 print(e)
@@ -253,12 +266,11 @@ class EquipmentManager:
         return EquipmentManager.__instance
 
     #添加新设备并返回对象
-    def AddEquipment(self, type, ip, port, name, exist_status=None, son_equipment_id=None):
+    def AddEquipment(self, type, ip, port, name, son_equipment_id=None):
         e = EquipmentFactory.CreateEquipment(type)
         e.ip = ip
         e.port = port
         e.name = name
-        e.exist_status = exist_status
         e.son_equipment_id = son_equipment_id
         e.save()
         if type == 'collector':
@@ -274,8 +286,7 @@ class EquipmentManager:
         self.__allequipments.append(e)
         return e
     #删除设备
-    def DeleteEquipment(self, unique_id):
-        equipment = self.GetEquipmentById(unique_id)
+    def DeleteEquipment(self, equipment):
         #从相应的设备列表中删除
         if type(equipment) == Collector:
             self.__collectors.remove(equipment)
