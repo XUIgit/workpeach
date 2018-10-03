@@ -16,10 +16,10 @@ class MainManager:
             MainManager.__instance = object.__new__(MainManager)
             EquipmentManager.GetInstance()#第一次调用获取实例 在其中进行初始化
             ProductionManager.GetInstance()
-            MainManager.__instance.__RunAllEquipment()
+            #MainManager.__instance.__RunAllEquipment()
         return MainManager.__instance
 
-    def __RunAllEquipment(self):
+    def RunAllEquipment(self):
         for equipment in EquipmentManager.GetInstance().GetAllEquipments():
             equipment.run()
 
@@ -34,3 +34,4 @@ class MainManager:
 
     def DeleteEquipment(self, equipment):
         EquipmentManager.GetInstance().DeleteEquipment(equipment)
+

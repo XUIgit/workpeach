@@ -19,7 +19,6 @@ class Production:
         self.__equipment_id = equipment_id
         self.__technology_id = technology_id
         self.__state = "producing"
-        self.__sql_model = None
 
     def __InitProduction(self):
         '''
@@ -32,12 +31,17 @@ class Production:
         self.equipment = EquipmentManager.GetInstance().GetEquipmentById(self.__equipment_id)
 
     def Save(self):
-        '''将产品信息写入数据库, 不需要手动调用，应该调用manager的SaveProduction '''
-        if not self.__sql_model:
-            self.__sql_model = ProductionInfo(self.__technology_id, self.__production_id,self.__production_category, self.__equipment_id, self.__state)
-            self.__sql_model.save()
+        p = ProductionInfo.query.filter_by(production_id=self.production_id).first()
+        if p:
+            p.technology_id = self.__technology_id
+            p.production_id = self.production_id
+            p.production_category = self.__production_category
+            p.equipment_id = self.equipment_id
+            p.production_state = self.state
+            p.update()
         else:
-            self.__sql_model.update()
+            e = ProductionInfo(self.__technology_id, self.__production_id,self.__production_category, self.__equipment_id, self.__state)
+            e.save()
 
     @property
     def production_id(self):
@@ -53,8 +57,6 @@ class Production:
 
     @state.setter
     def state(self, value):
-        if self.__sql_model:
-            self.__sql_model.production_state = value
         self.__state = value
 
 class ProductionManager:

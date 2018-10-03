@@ -20,7 +20,7 @@ function removeCheck(){
             alert("设备id:" + deviceId + ",host:" + deviceIp  + ",port:" + devicePort) ;
             //alert()
             $.post("/ma_config/removedevice",
-                   {"id":deviceId,"ip":deviceIp,"port":devicePort},
+                   {"id":deviceId},
                     function(){alert("设备id:" + deviceId + ",host:" + deviceIp  + ",port:" + devicePort+"删除成功") ;}
                     ,"json"
                    );

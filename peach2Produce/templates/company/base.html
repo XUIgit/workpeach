@@ -46,10 +46,10 @@
                     <li class="scroll"><a href="#our-team">Team</a></li>
                     <li class="scroll"><a href="#contact-us">Contact</a></li>
                     <li class="scroll">
-                        {%if isGuest()%}
+                        {%if User.isGuest()%}
                         <a href="{{url_for('index_login')}}">Login</a>
                         {%else%}
-                        <a href="{{url_for('user_logout')}}">({{GetUserName()}})Logout</a>
+                        <a href="{{url_for('user_logout')}}">({{User.GetUserName()}})Logout</a>
                         {%endif%}
                     </li>
                 </ul>

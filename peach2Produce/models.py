@@ -13,8 +13,8 @@ from datamodels import DevicesRunInfo
 
 
 # User类 用于登录的模型
-class User(db.Model):
-    __tablename__ = 'users'
+class Users(db.Model):
+
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(80), unique=True)
     email = db.Column(db.String(320), unique=True)
@@ -31,12 +31,13 @@ class User(db.Model):
     @staticmethod
     def login(username, password):
         # 先查询用户名
-        re = User.query.filter_by(username=username).first()
+        re = Users.query.filter_by(username=username).first()
         # 没查到则查email
         if not re:
-            re = User.query.filter_by(email=username).first()
+            re = Users.query.filter_by(email=username).first()
 
         if re and re.isRight(password):
+            #cookie保存在浏览器
             session['username_key'] = re.key
             session['password'] = re.password
             session.permanent = True
@@ -75,45 +76,54 @@ class User(db.Model):
 
 
 # 用于处理本地主机配置的模型
-class LocalHostConfig:
-    def __init__(self, id, interval):
-        self.id = id
-        self.interval = interval
+class LocalHostConfig(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    host_id = db.Column(db.String(16), unique=True)
+    upload_interval = db.Column(db.Integer, unique=False)
+
+    def __init__(self, host_id, upload_interval):
+        self.host_id = host_id
+        self.upload_interval = upload_interval
 
     @staticmethod
     def load(request):
-        # 从表单中加载 失败则使用默认配置
-        id = configParser.get("LocalHost", 'id')
-        interval = configParser.get('LocalHost', 'interval')
-        if 'localHostId' in request.form:
-            id = request.form['localHostId']
-        if 'localHostInterval' in request.form:
-            interval = request.form['localHostInterval']
-        return LocalHostConfig(id, interval)
+        host_id = request.form.get('localHostId')
+        interval = request.form.get('localHostInterval')
+        l = LocalHostConfig.query.first()
+        l.host_id = host_id
+        l.upload_interval = interval
+        return l
 
     def save(self):
-        configParser.set('LocalHost', 'id', self.id)
-        configParser.set('LocalHost', 'interval', self.interval)
-        with open('config.ini', 'w') as file:
-            configParser.write(file)
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
 
 
 # 用于处理远程主机配置的模型
-class RemoteHostConfig:
+class RemoteHostConfig(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    url = db.Column(db.String(200), unique=True)
+
     def __init__(self, url):
         self.url = url
 
     @staticmethod
     def load(request):
-        url = configParser.get('RemoteHost', 'url')
-        if 'remoteHostUrl' in request.form:
-            url = request.form['remoteHostUrl']
-        return RemoteHostConfig(url)
+        url = request.form.get('remoteHostUrl')
+        r = RemoteHostConfig.query.first()
+        r.url = url
+        return r
 
     def save(self):
-        configParser.set('RemoteHost', 'url', self.url)
-        with open('config.ini', 'w') as file:
-            configParser.write(file)
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
 
 
 # 用于生产信息查询form的模型
@@ -693,8 +703,8 @@ class EquipmentInfo(db.Model):
     name = db.Column(db.String(64), nullable=False)
     son_equipment_id = db.Column(db.String(16), nullable=True)  # 此设备 所连接(包含)的设备
 
-    def __init__(self, ip=None, port=None, type=None, name=None, son_equipment_id=None):
-        self.unique_id = randomStr(16)
+    def __init__(self, unique_id, ip=None, port=None, type=None, name=None, son_equipment_id=None):
+        self.unique_id = unique_id
         self.ip = ip
         self.port = port
         self.type = type
@@ -732,7 +742,4 @@ class ProductionInfo:
         db.session.commit()
 
     def update(self):
-        db.session.commit()
-
-    def commit(self):
         db.session.commit()

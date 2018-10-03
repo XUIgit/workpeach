@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-from app import db
+from app import db,application
 from models import EquipmentInfo
 from datamodels import CollectionDatas
 import socket
 import time
 import signalsPool
 import threading
+import utils
 
 '''
 基本原则，尽量调用Manager里的操作函数，而不是相应对象本身的
@@ -18,71 +19,82 @@ import threading
 class Equipment:
     '''设备的基类'''
 
-    def __init__(self,sql_model, exist_in_db=True):
-        self.__sql_model = sql_model
-        self.__exist_in_db = exist_in_db
+    def __init__(self,type, unique_id, name, ip, port, son_equipment_id=None):
+        self.__type = type
+        self.__unique_id = unique_id
+        self.__name = name
+        self.__son_equipment_id = son_equipment_id
+        self.__ip = ip
+        self.__port = port
         self.status = 'stop'
 
     def save(self):
-        if self.__exist_in_db:#存在于数据库中直接提交更新
-            db.session.commit()
-        else:#不存在则先添加
-            db.session.add(self.__sql_model)
-            db.session.commit()
-            self.__exist_in_db = True
+        e = EquipmentInfo.query.filter_by(unique_id = self.unique_id).first()
+        if e:
+            e.type = self.type
+            e.unique_id = self.unique_id
+            e.name = self.name
+            e.ip = self.ip
+            e.port = self.port
+            e.son_equipment_id = self.son_equipment_id
+            e.update()
+        else:
+            e = EquipmentInfo(self.unique_id, self.ip, self.port, self.type, self.name, self.son_equipment_id)
+            e.save()
+
 
     @property
     def unique_id(self):
-        return self.__sql_model.unique_id
+        return self.__unique_id
 
     @property
     def type(self):
-        return self.__sql_model.type
+        return self.__type
 
     @type.setter
     def type(self, value):
         if type(value) == str:
-            self.__sql_model.type = value
+            self.__type = value
         else:
             raise ValueError("type's type is str")
 
     @property
     def name(self):
-        return self.__sql_model.name
+        return self.__name
 
     @name.setter
     def name(self, value):
         if type(value) == str:
-            self.__sql_model.name = value
+            self.__name = value
         else:
             raise ValueError("name's type is str")
 
     @property
     def son_equipment_id(self):
-        return self.__sql_model.son_equipment_id
+        return self.__son_equipment_id
 
     @son_equipment_id.setter
     def son_equipment_id(self, value):
-        if type(value) == str:
-            self.__sql_model.son_equipment_id = value
+        if type(value) == str or not value:
+            self.__son_equipment_id = value
         else:
             raise ValueError("son_equipment_id's type is str")
     @property
     def ip(self):
-        return self.__sql_model.ip
+        return self.__ip
     @ip.setter
     def ip(self, value):
         if type(value) == str:
-            self.__sql_model.ip = value
+            self.__ip = value
         else:
             raise ValueError("ip's type is str")
     @property
     def port(self):
-        return self.__sql_model.port
+        return self.__port
     @port.setter
     def port(self, value):
         if type(value) == int:
-            self.__sql_model.port = value
+            self.__port = value
         else:
             raise ValueError("port's type is int")
 
@@ -104,8 +116,8 @@ class WeldingEquipment(Equipment):
         else:
             return self.__collector
 
-    def __init__(self, sql_model, exist_in_db=True):
-        Equipment.__init__(sql_model, exist_in_db)
+    def __init__(self,type, unique_id, name, ip, port, son_equipment_id=None):
+        Equipment.__init__(self,type, unique_id, name, ip, port, son_equipment_id)
         #其连接的采集器
         self.__collector = None
 
@@ -117,8 +129,8 @@ class Robot(Equipment):
 
     '''焊接设备的基类'''
 
-    def __init__(self, sql_model, exist_in_db=True):
-        Equipment.__init__(self, sql_model, exist_in_db)
+    def __init__(self,type, unique_id, name, ip, port, son_equipment_id=None):
+        Equipment.__init__(self,type, unique_id, name, ip, port, son_equipment_id)
         pass
 
     def run(self):
@@ -128,8 +140,8 @@ class Robot(Equipment):
 class Collector(Equipment):
     '''采集器'''
 
-    def __init__(self, sql_model, exist_in_db=True):
-        Equipment.__init__(self, sql_model, exist_in_db)
+    def __init____init__(self,type, unique_id, name, ip, port, son_equipment_id=None):
+        Equipment.__init__(self,type, unique_id, name, ip, port, son_equipment_id)
         self.working_production = None
 
     def run(self):
@@ -149,14 +161,13 @@ class Collector(Equipment):
         except Exception as e:
             print(e)
 
-        for try_times in range(1, 3):
+        for try_times in range(1, 100):
             try:
                 self.status = "reconnecting"
                 sc.connect((self.ip, self.port))
                 self.status = "running"
             except Exception as err:
-                print('err:' + str(err))
-                print(self.name+' 连接异常 尝试重新连接{}次'.format(try_times))
+                print(self.name+'连接异常 尝试重新连接{}次'.format(try_times))
                 time.sleep(1)
 
         last_v = 0
@@ -170,9 +181,11 @@ class Collector(Equipment):
                 t = (data[4] * 256 + data[5]) / 100
 
                 if (v != 0 or e != 0) and (last_v == 0 and last_e == 0):
-                    signalsPool.ROBOT_START.send(id, time=time.time())
+                    #signalsPool.ROBOT_START.send(id, time=time.time())
+                    pass
                 if (v == 0 or e == 0) and (last_v != 0 and last_e != 0):
-                    signalsPool.ROBOT_STOP.send(id, time=time.time())
+                    #signalsPool.ROBOT_STOP.send(id, time=time.time())
+                    pass
                 last_v = v
                 last_e = e
                 collected_num_thershold += 1
@@ -188,21 +201,23 @@ class Collector(Equipment):
                                               self.working_production.state)
                         one.save()
                     collected_num_thershold = 0
-            except socket.error as e:
-                print(e)
-                self.status = "stop"
-                return
             except Exception as err:
-                print('err:' + str(err))
                 self.status = "stop"
-                return
+                for try_times in range(1, 100):
+                    try:
+                        self.status = "reconnecting"
+                        sc.connect((self.ip, self.port))
+                        self.status = "running"
+                    except Exception as err:
+                        print(self.name + '连接异常 尝试重新连接{}次'.format(try_times))
+                        time.sleep(1)
 
 
 class WeldingGun(WeldingEquipment):
     '''焊枪'''
 
-    def __init__(self, sql_model, exist_in_db=True):
-        WeldingEquipment.__init__(self, sql_model, exist_in_db)
+    def __init__(self,type, unique_id, name, ip, port, son_equipment_id=None):
+        WeldingEquipment.__init__(self, type, unique_id, name, ip, port, son_equipment_id)
         pass
 
     def run(self):
@@ -212,8 +227,8 @@ class WeldingGun(WeldingEquipment):
 class CuttingMachine(WeldingEquipment):
     '''切割机'''
 
-    def __init__(self, sql_model, exist_in_db=True):
-        WeldingEquipment.__init__(self, sql_model, exist_in_db)
+    def __init__(self,type, unique_id, name, ip, port, son_equipment_id=None):
+        WeldingEquipment.__init__(self,type, unique_id, name, ip, port, son_equipment_id)
         pass
 
     def run(self):
@@ -230,9 +245,9 @@ class EquipmentFactory:
         if not type in EquipmentFactory.types:
             raise ValueError("type not found")
         re = []
-        equipments = EquipmentInfo.query.filter_by(type=type)
+        equipments = EquipmentInfo.query.filter_by(type=type).all()
         for equipment in equipments:
-            eq = eval(type.capitalize()+"(equipment)")
+            eq = eval(type.capitalize()+"(equipment.type,equipment.unique_id,equipment.name,equipment.ip,equipment.port,equipment.son_equipment_id)")
             re.append(eq)
         return re
 
@@ -242,8 +257,7 @@ class EquipmentFactory:
         if not type in EquipmentFactory.types:
             raise ValueError("type not found")
         else:
-            sql_model = EquipmentInfo(type=type)
-            return eval(type.capitalize()+"(sql_model,False)")
+            return eval(type.capitalize()+"(type,utils.randomStr(16),'None','None','0',None)")
 
 class EquipmentManager:
     '''单列模式'''
@@ -299,8 +313,10 @@ class EquipmentManager:
         else:
             raise ValueError("equipment must be a instance of Euipment")
         self.__allequipments.remove(equipment)
+
+        e = EquipmentInfo.query.filter_by(unique_id=equipment.unique_id).first()
         #从数据库中删除
-        db.session.delete(equipment)
+        db.session.delete(e)
         db.session.commit()
 
     def GetEquipmentById(self, unique_id):
