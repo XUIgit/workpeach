@@ -101,6 +101,9 @@ class Equipment:
     def run(self):
         pass
 
+    def SetWorkProduction(self, production):
+        pass
+
 class WeldingEquipment(Equipment):
     '''焊接设备的基类'''
 
@@ -161,14 +164,17 @@ class Collector(Equipment):
         except Exception as e:
             print(e)
 
-        for try_times in range(1, 100):
+        try_times = 1
+        while True:
+            try_times += 1
             try:
                 self.status = "reconnecting"
                 sc.connect((self.ip, self.port))
                 self.status = "running"
             except Exception as err:
                 print(self.name+'连接异常 尝试重新连接{}次'.format(try_times))
-                time.sleep(1)
+                time.sleep(2)
+
 
         last_v = 0
         last_e = 0
@@ -202,15 +208,17 @@ class Collector(Equipment):
                         one.save()
                     collected_num_thershold = 0
             except Exception as err:
-                self.status = "stop"
-                for try_times in range(1, 100):
+                try_times = 1
+                while True:
+                    try_times += 1
                     try:
                         self.status = "reconnecting"
                         sc.connect((self.ip, self.port))
                         self.status = "running"
                     except Exception as err:
                         print(self.name + '连接异常 尝试重新连接{}次'.format(try_times))
-                        time.sleep(1)
+                        time.sleep(2)
+
 
 
 class WeldingGun(WeldingEquipment):

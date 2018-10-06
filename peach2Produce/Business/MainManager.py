@@ -23,8 +23,15 @@ class MainManager:
         for equipment in EquipmentManager.GetInstance().GetAllEquipments():
             equipment.run()
 
-    def AddProduction(self, production_category, technology_id, equipment_id):
-        return ProductionManager.GetInstance().AddProduction(production_category, technology_id, equipment_id)
+    def AddProduction(self, production_id, production_category, technology_id, equipment_id, begin_time):
+        '''添加产品，并设置到相应的设备中'''
+        production = ProductionManager.GetInstance().AddProduction(production_id, production_category, technology_id, equipment_id,begin_time)
+        einstance = EquipmentManager.GetInstance()
+        for equipment in einstance.GetAllEquipments():
+            if equipment.unique_id == equipment_id:
+                equipment.SetWorkProduction(production)
+                break
+        return production
 
     def AddEquipment(self, type, ip, port, name, son_equipment_id=None):
         return EquipmentManager.GetInstance().AddEquipment(type, ip, port, name, son_equipment_id)

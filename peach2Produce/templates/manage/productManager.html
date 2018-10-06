@@ -19,19 +19,25 @@
                 <div class="mws-form-row">
                     <label>生产编号</label>
                     <div class="mws-form-item large">
-                        <input type="text" name="productId" class="mws-textinput required"/>
+                        <input type="text" name="production_id" class="mws-textinput required"/>
                     </div>
                 </div>
                 <div class="mws-form-row">
                     <label>工艺编号</label>
                     <div class="mws-form-item large">
-                        <input type="text" name="techniqueId" class="mws-textinput required"/>
+                        <input type="text" name="technology_id" class="mws-textinput required"/>
                     </div>
                 </div>
                 <div class="mws-form-row">
-                    <label>产品描述</label>
+                    <label>产品类型</label>
                     <div class="mws-form-item large">
-                        <input type="text" name="desc" class="mws-textinput required number"/>
+                        <input type="text" name="production_category" class="mws-textinput required number"/>
+                    </div>
+                </div>
+                <div class="mws-form-row">
+                    <label>采集器ID</label>
+                    <div class="mws-form-item large">
+                        <input type="text" name="equipment_id" class="mws-textinput required number"/>
                     </div>
                 </div>
 
@@ -57,13 +63,13 @@
                 <div class="mws-form-row">
                     <label>生产编号</label>
                     <div class="mws-form-item large">
-                        <input type="text" name="productId" class="mws-textinput required"/>
+                        <input type="text" name="production_id" class="mws-textinput required"/>
                     </div>
                 </div>
                 <div class="mws-form-row">
                     <label>过程评定</label>
                     <div class="mws-form-item large">
-                        <select name="processEval">
+                        <select name="process_eval">
                             <option value="QUALIFIED">合格</option>
                             <option value="UNQUALIFIED">不合格</option>
                         </select>
@@ -72,7 +78,7 @@
                 <div class="mws-form-row">
                     <label>结果评定</label>
                     <div class="mws-form-item large">
-                        <select name="resultEval">
+                        <select name="result_eval">
                             <option value="QUALIFIED">合格</option>
                             <option value="UNQUALIFIED">不合格</option>
                         </select>

@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 from app import application
 from flask import request, url_for, redirect
-from models import LocalHostConfig, RemoteHostConfig,DeviceInfo
-from deviceManager import NewDevice
-import json
-import devsocket
+from models import LocalHostConfig, RemoteHostConfig
 from Business import MainManager,EquipmentManager
 
 @application.route('/ma_config/setlocal', methods=['POST'])
@@ -41,17 +38,10 @@ def ma_config_removedevice():
 
 @application.route('/ma_config/connectdevice', methods=['POST'])
 def ma_config_connectdevice():
-    try:
-        device_id = int(request.form.get('id'))
-        if device_id in application.config['DEVICES'] and application.config['DEVICES'][device_id]['status'] == 'stop':
-            device = NewDevice.load(request)
-            device.save()
-            devsocket.startCollectedThread(device)
-        elif application.config['DEVICES'][device_id]['status'] != 'stop':
-            print("not stop")
-        else:
-            print("not found or not stop")
-    except Exception as e:
-        print(e)
+    id = request.form.get('id')
+    if id:
+        e = EquipmentManager.GetInstance().GetEquipmentById(id)
+        if e.status == 'stop':
+            e.run()
     return redirect(url_for('ma_index_config'))
 

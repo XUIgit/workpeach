@@ -722,20 +722,28 @@ class EquipmentInfo(db.Model):
         db.session.commit()
 
 #储存产品信息的表
-class ProductionInfo:
+class ProductionInfo(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     technology_id = db.Column(db.String(16), unique=False, nullable=False)
-    production_id = db.Column(db.String(16), unique=False, nullable=False)
+    production_id = db.Column(db.String(16), unique=True, nullable=False)
     production_category = db.Column(db.String(16), unique=False, nullable=False)
     equipment_id = db.Column(db.String(16), unique=False, nullable=False)
     production_state = db.Column(db.String(16), unique=False, nullable=False)
+    process_eval = db.Column(db.String(16), unique=False, nullable=False)
+    result_eval = db.Column(db.String(16), unique=False, nullable=False)
+    begin_time = db.Column(db.DateTime, unique=False, default=datetime.datetime.now())
+    end_time = db.Column(db.DateTime, unique=False, default=datetime.date(2100, 1, 1))
 
-    def __init__(self, technology_id, production_id, production_category, equipment_id, production_state):
+    def __init__(self, technology_id, production_id, production_category, equipment_id, production_state,process_eval,result_eval,begin_time,end_time):
         self.technology_id = technology_id
         self.production_id = production_id
         self.production_category = production_category
         self.production_state = production_state
         self.equipment_id = equipment_id
+        self.result_eval = result_eval
+        self.process_eval = process_eval
+        self.begin_time = begin_time
+        self.end_time = end_time
 
     def save(self):
         db.session.add(self)
