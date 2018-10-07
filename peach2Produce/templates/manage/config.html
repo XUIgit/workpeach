@@ -1,0 +1,193 @@
+{%extends 'manage/base.html' %}
+
+{%block content%}
+
+<h1>
+    配置
+</h1>
+
+
+
+<div class="mws-panel grid_8" >
+    <div class="mws-panel-header">
+        <span class="mws-i-24 i-table-1">设备列表</span>
+    </div>
+    <div class="mws-panel-body">
+        <div class="mws-panel-toolbar top clearfix">
+            <ul>
+                <li><a href="#" class="mws-ic-16 ic-accept" onclick="showPopup()">添加</a></li>
+                <li><a href="#" class="mws-ic-16 ic-cross" onclick="removeCheck()">删除</a></li>
+                <li><a href="#" class="mws-ic-16 ic-drive-network" onclick="doConnect()">重连</a></li>
+                <li><a href="#" class="mws-ic-16 ic-edit"  onclick="updateCheck()">修改</a></li>
+                <li><a href="#" class="mws-ic-16 ic-arrow-refresh" onclick="window.location.reload()">刷新</a></li>
+            </ul>
+        </div>
+        <div id="white_content_pop" class="white_content">
+            <div class="mws-panel-header">
+                <span class="mws-i-24 i-check">添加设备</span>
+            </div>
+            <div class="mws-panel-body">
+                <form id="mws-validate" class="mws-form" action="{{url_for('ma_config_adddevice')}}"
+                      method="post">
+                    <div id="mws-validate-error" class="mws-form-message error" style="display:none;"></div>
+                    <div class="mws-form-inline">
+                        <div class="mws-form-row">
+                            <label>设备名称</label>
+                            <div class="mws-form-item large">
+                                <input type="text" name="name" class="mws-textinput required"/>
+                            </div>
+                        </div>
+                        <div class="mws-form-row">
+                            <label>IP</label>
+                            <div class="mws-form-item large">
+                                <input type="text" name="ip" class="mws-textinput required"/>
+                            </div>
+                        </div>
+                        <div class="mws-form-row">
+                            <label>端口</label>
+                            <div class="mws-form-item large">
+                                <input type="text" name="port" class="mws-textinput required number"/>
+                            </div>
+                        </div>
+                         <div class="mws-form-row">
+                             <label>设备类型</label>
+                             <div class="mws-form-item large">
+                                 <input type="text" name="type" class="mws-textinput required" />
+                             </div>
+                         </div>
+
+                        <div class="mws-button-row">
+                            <input type="submit" class="mws-button green" value="添加"/>
+                            <input type="button" class="mws-button orange" onclick="closePopup()" value="取消"/>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+
+        <table class="mws-table" id="device-table" style="height:200px;">
+            <thead>
+            <tr>
+                <th>选择</th>
+                <th>设备序号</th>
+                <th>IP地址</th>
+                <th>端口</th>
+                <th>设备名称</th>
+                <th>类型</th>
+                <th>设备状态</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for equipment in equipment_manager.GetAllEquipments()%}
+            <tr class="gradeX">
+                <td><input type="checkbox" name="device-check"/></td>
+                <td>{{equipment.unique_id}}</td>
+                <td ondblclick="editText(this)">{{equipment.ip}}</td>
+                <td ondblclick="editText(this)"> {{equipment.port}}</td>
+                <td ondblclick="editText(this)" class="center">{{equipment.name}}</td>
+                <td ondblclick="editText(this)" class="center">{{equipment.type}}</td>
+                <td class="center">{{equipment.status}}</td>
+            </tr>
+            {%endfor%}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="mws-panel grid_4" >
+    <div class="mws-panel-header">
+        <span class="mws-i-24 i-check">本地主机</span>
+    </div>
+    <div class="mws-panel-body">
+        <form id="mws-validate" class="mws-form" action="{{url_for('ma_config_setlocal')}}" style="height:100%" method="post">
+            <div id="mws-validate-error" class="mws-form-message error" style="display:none;"></div>
+            <div class="mws-form-inline" style="height:150px;">
+                <div class="mws-form-row">
+                    <label>本机标识符</label>
+                    <div class="mws-form-item large">
+                        <input type="text" name="localHostId" class="mws-textinput required" value="{{localModel.host_id}}"/>
+                    </div>
+                </div>
+                <div class="mws-form-row">
+                    <label>数据上传间隔(秒)</label>
+                    <div class="mws-form-item large">
+                        <input type="text" name="localHostInterval" class="mws-textinput required number" value="{{localModel.upload_interval}}" />
+                    </div>
+                </div>
+            </div>
+            <div class="mws-button-row">
+                <input type="submit" class="mws-button red" value="设置"/>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="mws-panel grid_4" >
+    <div class="mws-panel-header">
+        <span class="mws-i-24 i-check">远程主机</span>
+    </div>
+    <div class="mws-panel-body" >
+        <form id="mws-validate" class="mws-form" action="{{url_for('ma_config_setremote')}}"  style="height:100%" method="post">
+            <div id="mws-validate-error" class="mws-form-message error" style="display:none;"></div>
+            <div class="mws-form-inline" style="height:150px;">
+                <div class="mws-form-row">
+                    <label>主机地址</label>
+                    <div class="mws-form-item large">
+                        <input type="text" name="remoteHostUrl" class="mws-textinput required url" value="{{remoteModel.url}}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="mws-button-row">
+                <input type="submit" class="mws-button red" value="设置"/>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!--
+<div class="mws-panel grid_8" >
+            <div class="mws-panel-header">
+                <span class="mws-i-24 i-check">添加产品</span>
+            </div>
+            <div class="mws-panel-body">
+                <form id="mws-validate" class="mws-form" action="{{url_for('ma_manufacture_begin')}}"
+                      method="post">
+                    <div id="mws-validate-error" class="mws-form-message error" style="display:none;"></div>
+                    <div class="mws-form-inline">
+                        <div class="mws-form-row">
+                            <label>生产编号</label>
+                            <div class="mws-form-item large">
+                                <input type="text" name="productId" class="mws-textinput required"/>
+                            </div>
+                        </div>
+                        <div class="mws-form-row">
+                            <label>工艺ID</label>
+                            <div class="mws-form-item large">
+                                <input type="text" name="techniqueId" class="mws-textinput required"/>
+                            </div>
+                        </div>
+                        <div class="mws-form-row">
+                            <label>描述</label>
+                            <div class="mws-form-item large">
+                                <input type="text" name="desc" class="mws-textinput required number"/>
+                            </div>
+                        </div>
+
+                        <div class="mws-button-row">
+                            <input type="submit" class="mws-button green" value="添加"/>
+                            <input type="button" class="mws-button orange" onclick="closePopup()" value="取消"/>
+                        </div>
+                    </div>
+                </form>
+            </div>
+ </div>-->
+{%endblock%}
+{%block scripts %}
+<script>
+
+
+</script>
+{%endblock %}
+
