@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 from app import application
-from flask import url_for, render_template, request, redirect, jsonify
+from flask import url_for, render_template, request, redirect
 import json
 from datamodels import CollectionDatas,CollectionDataSeria
 from models import RobotInfo, AgvPos

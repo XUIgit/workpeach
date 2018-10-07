@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
-from app import db, application, configParser
+from app import db, application
 from utils import randomStr, encrypt, decrypt
-from flask import escape
-from flask import session, request
+from flask import session
 from sqlalchemy import and_, desc, func
-import json
 
-import time
 import datetime
 import json
 from datamodels import DevicesRunInfo

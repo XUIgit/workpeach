@@ -4,6 +4,7 @@ from Business.MainManager import MainManager
 from Business.User import User
 from Business.Equipments import EquipmentManager
 from Business.Production import ProductionManager
+from Business.Agv import StartAgv
 
 from app import application,db
 

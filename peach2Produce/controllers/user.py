@@ -21,7 +21,6 @@ def user_login():
     else:
         abort(404)
 
-
 # 新建用户动作
 '''
 @application.route('/user/signup', methods=['POST', 'GET'])

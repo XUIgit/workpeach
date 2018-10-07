@@ -40,6 +40,11 @@ def ma_manufacture_end():
     end_time = datetime.datetime.now()
 
     production = ProductionManager.GetInstance().GetProductionById(production_id)
+
+    if not production:
+        #可以做一些提示，这里直接刷新页面
+        return redirect(url_for('ma_index_product'))
+
     production.end_time = end_time
     production.result_eval = result_eval
     production.process_eval = process_eval
