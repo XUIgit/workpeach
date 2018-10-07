@@ -2,6 +2,7 @@
 from utils import randomStr
 from models import ProductionInfo
 from Business.Equipments import EquipmentManager
+from sqlalchemy import and_
 
 '''
 基本原则，尽量调用Manager里的操作函数，而不是相应对象本身的
@@ -52,6 +53,9 @@ class Production:
                                self.__equipment_id, self.__state, self.process_eval, self.result_eval,self.__begin_time,self.end_time)
             e.save()
 
+    @property
+    def begin_time(self):
+        return self.__begin_time
     @property
     def end_time(self):
         return self.__end_time
@@ -122,3 +126,19 @@ class ProductionManager:
     def RemoveProduction(self, production):
         '''从程序中移除程序'''
         self.__current_productions.remove(production)
+
+    @staticmethod
+    def SearchProductions(production_id=None,production_category=None,status=None,result_eval=None,process_eval=None):
+        filter = []
+        if production_id:
+            filter.append(ProductionInfo.production_id == production_id)
+        if production_category:
+            filter.append(ProductionInfo.production_category == production_category)
+        if status:
+            filter.append(ProductionInfo.production_state == status)
+        if result_eval:
+            filter.append(ProductionInfo.result_eval == result_eval)
+        if process_eval:
+            filter.append(ProductionInfo.process_eval == process_eval)
+
+        return ProductionInfo.query.filter(and_(*filter)).limit(100).all()  # 一次性最多产生100条

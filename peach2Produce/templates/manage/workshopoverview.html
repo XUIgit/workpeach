@@ -23,13 +23,11 @@
         <div class="mws-panel-content">
             <div class="mws-report-container clearfix">
 
-                {% for id,info in config['DEVICES'].items() %}
-                <a href="{{url_for('ma_workshop_dataview',id=id)}}" class="mws-report" style="margin-bottom:50px;">
-                    <span style="font-size:18px">{{info['name']}}</span>
+                {% for equipment in equipment_manager.GetAllEquipments()%}
+                <a href="{{url_for('ma_workshop_dataview',equipment_id=equipment.unique_id)}}" class="mws-report" style="margin-bottom:50px;">
+                    <span style="font-size:18px">{{equipment.type + ": "+equipment.name}}</span>
                     <img src="/static/manage/images/devoverview.png" style="overview:hidden">
-                    <span style="font-size:15px">连接状态: {{info['status']}}</span>
-                    <br/>
-                    <span style="font-size:15px">生产状态: {{info['produce_status']}}</span>
+                    <span style="font-size:15px">连接状态: {{equipment.status}}</span>
                 </a>
                 {%endfor%}
             </div>

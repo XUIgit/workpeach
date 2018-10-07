@@ -18,7 +18,7 @@
             <div class="mws-panel-content">
                   <form class="mws-form" action="{{url_for('ma_workshop_searchHistoryDatas')}}" method="post">
                         <label>设备数字序号</label>
-                        <input type="text" name="devId" class="mws-textinput required" value="{{id}}"/>
+                        <input type="text" name="production_id" class="mws-textinput required" value="{{id}}"/>
 
                         <label>起始时间点</label>
                         <input type="text" name="startTime" class="mws-textinput mws-datepicker hasDatepicker"/>
@@ -65,7 +65,7 @@ chart = Highcharts.stockChart('weldingchart', {
 
 								setInterval(function () {
 								$.ajax({
-                                    url: "{{url_for('ma_workshop_getCollectedDatas',id=id)}}",
+                                    url: "{{url_for('ma_workshop_getCollectedDatas',equipment_id=equipment_id)}}",
                                     type:'GET',
                                     success: function(datas) {
                                      datas=JSON.parse(datas);
@@ -77,7 +77,7 @@ chart = Highcharts.stockChart('weldingchart', {
 
                                      var produce_status = datas['produce_status'] ;
 									 var new_title = {
-                                            text: "{{config['DEVICES'][id]['name']}} 的采集数据<br/>机器人状态:" + produce_status,
+                                            text: "{{equipment_manager.GetEquipmentById(equipment_id).name}} 的采集数据",
                                      };
                                      chart.setTitle(new_title) ;
 
@@ -105,7 +105,7 @@ chart = Highcharts.stockChart('weldingchart', {
 				selected: 0
 		},
 		title : {
-				text : "{{config['DEVICES'][id]['name']}} 的采集数据<br/>机器人状态:{{config['DEVICES'][id]['produce_status']}}"
+				text : "{{equipment_manager.GetEquipmentById(equipment_id).name}} 的采集数据"
 		},
 		tooltip: {
 				split: false
@@ -132,7 +132,7 @@ chart = Highcharts.stockChart('weldingchart', {
 			plotLines:[{
                 color:'red',           //线的颜色，定义为红色
                 dashStyle:'longdashdot',     //默认值，这里定义为实线
-                value: {{config['DEVICES'][id]['I_THRESHILD_MAX']}},               //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                value: {{100}},               //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
                 width:2,               //标示线的宽度，2px
                 label:{
                     text:'电流上限',
@@ -141,7 +141,7 @@ chart = Highcharts.stockChart('weldingchart', {
             },{
                 color:'red',           //线的颜色，定义为红色
                 dashStyle:'longdashdot',     //默认值，这里定义为实线
-                value: {{config['DEVICES'][id]['I_THRESHILD_MIN']}},               //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                value: {{20}},               //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
                 width:2,
                 label:{text:'电流下限',style:{color:'red'} }
             }],
@@ -160,13 +160,13 @@ chart = Highcharts.stockChart('weldingchart', {
 		    plotLines:[{
                 color:'white',           //线的颜色，定义为红色
                 dashStyle:'longdashdot',     //默认值，这里定义为实线
-                value: {{config['DEVICES'][id]['V_THRESHILD_MAX']}},               //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                value: {{60}},               //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
                 width:2,
                 label:{text:'电压上限', style:{color:'white'}}
             },{
                 color:'white',           //线的颜色，定义为红色
                 dashStyle:'longdashdot',     //默认值，这里定义为实线
-                value: {{config['DEVICES'][id]['V_THRESHILD_MIN']}},               //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
+                value: {{10}},               //定义在那个值上显示标示线，这里是在x轴上刻度为3的值处垂直化一条线
                 width:2,
                 label:{text:'电压下限', style:{color:'white'} }
             }],

@@ -90,7 +90,7 @@ class CollectedAgvDatas(db.Model):
 ########################################################################################################################################
 #重构模型
 
-class CollectionDatas:
+class CollectionDatas(db.Model):
     __mapper_args__ = {
         "order_by": desc('time')
     }
@@ -98,12 +98,12 @@ class CollectionDatas:
     electricity = db.Column(db.Float, unique=False)
     voltage = db.Column(db.Float, unique=False)
     temperature = db.Column(db.Float, unique=False)
-    production_Id = db.Column(db.Integer, unique=False, nullable=True)
+    production_Id = db.Column(db.String(16), unique=False, nullable=True)
     equipment_id = db.Column(db.String(16), unique=False)
     time = db.Column(db.DateTime, unique=False, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
-    production_state = db.Column(db.String(16), unique=False, nullable=True)
+    state = db.Column(db.String(16), unique=False, nullable=True)
 
-    def __init__(self, equipment_id, production_Id, electricity, voltage, temperature, production_state):
+    def __init__(self, equipment_id, production_Id, electricity, voltage, temperature, state):
         self.electricity = electricity
         self.voltage = voltage
         self.temperature = temperature
@@ -111,8 +111,18 @@ class CollectionDatas:
         self.production_Id = production_Id
         self.equipment_id = equipment_id
         self.time = datetime.datetime.now()
-        self.production_state = production_state
+        self.state = state
 
     def save(self):
         db.session.add(self)
         db.session.commit()
+
+def CollectionDataSeria(obj):
+    return {
+        'time': obj.time.strftime('%Y/%m/%d %H:%M:%S'),
+        'e': obj.electricity,
+        'v': obj.voltage,
+        't': obj.temperature,
+        'productId': obj.production_Id,
+        'produce_status': obj.state,
+    }

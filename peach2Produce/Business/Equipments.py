@@ -27,6 +27,7 @@ class Equipment:
         self.__ip = ip
         self.__port = port
         self.status = 'stop'
+        self.working_production = None
 
     def save(self):
         e = EquipmentInfo.query.filter_by(unique_id = self.unique_id).first()
@@ -145,7 +146,6 @@ class Collector(Equipment):
 
     def __init____init__(self,type, unique_id, name, ip, port, son_equipment_id=None):
         Equipment.__init__(self,type, unique_id, name, ip, port, son_equipment_id)
-        self.working_production = None
 
     def run(self):
         if self.status == 'stop':
@@ -200,11 +200,11 @@ class Collector(Equipment):
                     if not self.working_production:
                         print(self.unique_id + "Collecotrs 没有要生产的产品")
                         one = CollectionDatas(self.unique_id, None, e, v, t,
-                                              None)
+                                              self.status)
                         one.save()
                     else:
                         one = CollectionDatas(self.unique_id, self.working_production.production_id, e, v, t,
-                                              self.working_production.state)
+                                              self.status)
                         one.save()
                     collected_num_thershold = 0
             except Exception as err:

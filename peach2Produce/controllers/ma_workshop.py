@@ -2,10 +2,12 @@
 from app import application
 from flask import url_for, render_template, request, redirect, jsonify
 import json
-from datamodels import CollectedDatas, CollectedDataSeria
+from datamodels import CollectionDatas,CollectionDataSeria
 from models import RobotInfo, AgvPos
 import datetime
 import time
+
+from Business import EquipmentManager
 
 
 @application.route('/ma_workshorp/overview/<int:factoryId>')
@@ -16,9 +18,10 @@ def ma_workshop_overview(factoryId):
     return render_template('manage/workshopoverview.html', titlename='车间视图', robotModels=robotModels)
 
 
-@application.route('/ma_workshop/dataview/<int:id>')
-def ma_workshop_dataview(id):
-    data = CollectedDatas.query.filter_by(dev_uniqueId=application.config['DEVICES'][id]['uniqueid']).limit(1000).all()
+@application.route('/ma_workshop/dataview/<equipment_id>')
+def ma_workshop_dataview(equipment_id):
+    #查询最近1000条作为初始数据
+    data = CollectionDatas.query.filter_by(equipment_id=equipment_id).limit(1000).all()
     vdatas = []
     edatas = []
     tdatas = []
@@ -30,19 +33,20 @@ def ma_workshop_dataview(id):
     data['e'] = edatas
     data['v'] = vdatas
     data['t'] = tdatas
-    return render_template('manage/workshopdataview.html', titlename='数据视图', id=id, thousandData=data)
+    return render_template('manage/workshopdataview.html', titlename='数据视图', equipment_id=equipment_id, thousandData=data)
 
 
-@application.route('/ma_workshop/getCollectedDatas/<int:id>')
-def ma_workshop_getCollectedDatas(id):
+@application.route('/ma_workshop/getCollectedDatas/<equipment_id>')
+def ma_workshop_getCollectedDatas(equipment_id):
     # devid是一个16位的标识符 不是在config的id
     data = None
-    if id in application.config['DEVICES'] and application.config['DEVICES'][id]['status'] == 'normal':
-        data = CollectedDatas.query.filter_by(dev_uniqueId=application.config['DEVICES'][id]['uniqueid']).first()
+    data = CollectionDatas.query.filter_by(equipment_id=equipment_id).first()
+    equipment = EquipmentManager.GetInstance().GetEquipmentById(equipment_id)
     if not data:
-        data = CollectedDatas(datetime.datetime.now(), 1, 0, 0, 0, 'stop', application.config['DEVICES'][id]['robotId'])
-    return json.dumps(data, default=CollectedDataSeria)
-
+        data = CollectionDatas(equipment_id,
+                               None,
+                               0, 0, 0, equipment.status)
+    return json.dumps(data, default=CollectionDataSeria)
 
 
 @application.route('/ma_workshop/getRobotModels', methods=['GET', 'POST'])
@@ -81,19 +85,19 @@ def ma_workshop_getAgvPose():
 
 @application.route('/ma_workshop/searchHistoryDatas', methods=['POST'])
 def ma_workshop_searchHistoryDatas():
-    if request.form['startTime'] and request.form['devId']:
+    if request.form['startTime'] and request.form['production_id']:
         reTime = {}
         reTime['startTime'] = request.form['startTime']
         reTime['endTime'] = request.form['endTime']
-        id = int(request.form['devId'])
-        query = CollectedDatas.query.filter_by(dev_uniqueId=application.config['DEVICES'][id]['uniqueid'])
+        id = int(request.form['production_id'])
+        query = CollectionDatas.query.filter_by(equipment_id = id)
         startTime = datetime.datetime.strptime(reTime['startTime'], '%Y-%m-%d %H:%M:%S')
         if reTime['endTime']:
-            data = query.filter(CollectedDatas.time.between(startTime, datetime.datetime.strptime(reTime['endTime'],
+            data = query.filter(CollectionDatas.time.between(startTime, datetime.datetime.strptime(reTime['endTime'],
                                                                                           '%Y-%m-%d %H:%M:%S'))).all()
         else:
             reTime['endTime'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            data = query.filter(CollectedDatas.time.between(startTime,
+            data = query.filter(CollectionDatas.time.between(startTime,
                                                             datetime.datetime.now())).all()
         vdatas = []
         edatas = []
