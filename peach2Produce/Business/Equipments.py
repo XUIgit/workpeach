@@ -4,7 +4,7 @@ from models import EquipmentInfo
 from datamodels import CollectionDatas
 import socket
 import time
-import signalsPool
+import datetime
 import threading
 import utils
 
@@ -28,6 +28,7 @@ class Equipment:
         self.__port = port
         self.status = 'stop'
         self.working_production = None
+        self.__waiting_productions = [] #正在等待的设备
 
     def save(self):
         e = EquipmentInfo.query.filter_by(unique_id = self.unique_id).first()
@@ -102,8 +103,12 @@ class Equipment:
     def run(self):
         pass
 
-    def SetWorkProduction(self, production):
-        pass
+    def AddProduction(self, production):#添加产品
+        if not self.working_production:#添加第一个产品直接设置为正在生产
+            self.working_production = production
+            production.state = "PRODUCING"
+        else:
+            self.__waiting_productions.append(production)
 
 class WeldingEquipment(Equipment):
     '''焊接设备的基类'''
@@ -152,9 +157,6 @@ class Collector(Equipment):
             self.thread = threading.Thread(target=Collector.__socket_run,args=(self,))
             self.thread.start()
 
-    def SetWorkProduction(self, production):
-        self.working_production = production
-
     def __socket_run(self):
         '''执行tcp通信和数据储存的线程函数'''
         sc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -180,6 +182,11 @@ class Collector(Equipment):
         last_e = 0
         collected_num_thershold = 0
         while True:
+            if self.working_production and self.working_production.state == "FINISHED": #如果生产完了 将可能存在的正在等待产品移入正在生产
+                if self.__waiting_productions:
+                    self.working_production = self.__waiting_productions.pop()
+                    self.working_production.state = "PRODUCING"
+
             try:
                 data = sc.recv(8)
                 e = (data[2] * 256 + data[3]) / 100  # 文档中电压与电流 与实际相反
@@ -196,16 +203,9 @@ class Collector(Equipment):
                 last_e = e
                 collected_num_thershold += 1
                 if collected_num_thershold >= 100:
-                    #建立好产品模型后在来处理
-                    if not self.working_production:
-                        print(self.unique_id + "Collecotrs 没有要生产的产品")
-                        one = CollectionDatas(self.unique_id, None, e, v, t,
+                    one = CollectionDatas(self.unique_id, self.working_production.production_id, e, v, t,
                                               self.status)
-                        one.save()
-                    else:
-                        one = CollectionDatas(self.unique_id, self.working_production.production_id, e, v, t,
-                                              self.status)
-                        one.save()
+                    one.save()
                     collected_num_thershold = 0
             except Exception as err:
                 try_times = 1
@@ -219,8 +219,6 @@ class Collector(Equipment):
                         print(self.name + '连接异常 尝试重新连接{}次'.format(try_times))
                         time.sleep(2)
 
-
-
 class WeldingGun(WeldingEquipment):
     '''焊枪'''
 
@@ -233,6 +231,7 @@ class WeldingGun(WeldingEquipment):
 
 
 class CuttingMachine(WeldingEquipment):
+
     '''切割机'''
 
     def __init__(self,type, unique_id, name, ip, port, son_equipment_id=None):

@@ -3,6 +3,7 @@ from app import db, application
 from utils import randomStr, encrypt, decrypt
 from flask import session
 from sqlalchemy import and_, desc, func
+import time
 
 import datetime
 import json
@@ -741,6 +742,36 @@ class ProductionInfo(db.Model):
         self.process_eval = process_eval
         self.begin_time = begin_time
         self.end_time = end_time
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+
+class Record(db.Model):
+    '''设备每天的运行时间和消耗量'''
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    equipment_id = db.Column(db.String(16), unique=False)
+    run_time = db.Column(db.Float)
+    stop_time = db.Column(db.Float)
+    exception_time = db.Column(db.Float)
+    date = db.Column(db.Date, nullable=False)
+    air_consumption = db.Column(db.Float)
+    welding_wire_consumption = db.Column(db.Float)
+    power_consumption = db.Column(db.Float)
+
+    def __init__(self, equipment_id, run_time, stop_time, exception_time, air_consumption, welding_wire_consumption, power_consumption):
+        self.equipment_id = equipment_id
+        self.run_time = run_time
+        self.stop_time = stop_time
+        self.exception_time = exception_time
+        self.date = time.strftime('%Y-%m-%d')
+        self.air_consumption = air_consumption
+        self.welding_wire_consumption = welding_wire_consumption
+        self.power_consumption = power_consumption
 
     def save(self):
         db.session.add(self)

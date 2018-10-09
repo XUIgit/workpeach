@@ -50,5 +50,7 @@ def ma_manufacture_end():
     production.process_eval = process_eval
     production.state = status
     production.Save()
+    ProductionManager.GetInstance().RemoveProduction(production)
+
 
     return redirect(url_for('ma_index_product'))

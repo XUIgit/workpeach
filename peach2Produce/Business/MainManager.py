@@ -28,8 +28,8 @@ class MainManager:
         production = ProductionManager.GetInstance().AddProduction(production_id, production_category, technology_id, equipment_id,begin_time)
         einstance = EquipmentManager.GetInstance()
         for equipment in einstance.GetAllEquipments():
-            if equipment.unique_id == equipment_id:
-                equipment.SetWorkProduction(production)
+            if equipment.unique_id == equipment_id :
+                equipment.AddProduction(production)
                 break
         return production
 

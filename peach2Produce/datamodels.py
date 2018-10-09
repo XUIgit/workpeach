@@ -126,3 +126,4 @@ def CollectionDataSeria(obj):
         'productId': obj.production_Id,
         'produce_status': obj.state,
     }
+

@@ -33,7 +33,8 @@ def ma_workshop_dataview(equipment_id):
     data['e'] = edatas
     data['v'] = vdatas
     data['t'] = tdatas
-    return render_template('manage/workshopdataview.html', titlename='数据视图', equipment_id=equipment_id, thousandData=data)
+    equipment = EquipmentManager.GetInstance().GetEquipmentById(equipment_id)
+    return render_template('manage/workshopdataview.html', titlename='数据视图', equipment=equipment, thousandData=data)
 
 
 @application.route('/ma_workshop/getCollectedDatas/<equipment_id>')
