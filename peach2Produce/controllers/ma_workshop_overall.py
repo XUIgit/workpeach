@@ -1,8 +1,8 @@
 # -*- coding:utf-8 -*-
 from app import application
 from flask import url_for, render_template, request
-from models import RobotInfo, AgvPos, getTodayEval, getHistoryEval, \
-    getHistoryProduce, getTodayRunTime, getHistoryRunTime, getHistoryCost
+from models import RobotInfo
+from Business.CountStatistics import getTodayRunTime,getHistoryRunTime,getHistoryCost
 
 
 @application.route('/ma_workshorp/overall', methods=['GET', 'POST'])

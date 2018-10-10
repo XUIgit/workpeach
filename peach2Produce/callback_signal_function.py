@@ -1,7 +1,5 @@
 import signalsPool
-from app import db, application
-from models import RobotRunInfo, ProductControlInfo, TechniqueInfo, DeviceInfo
-import threading
+
 
 
 def signals_robot_start_callback(sender, *args, **kwargs):

@@ -1,8 +1,7 @@
 #-*- coding:utf-8 -*-
 '''主要是记录设备运行时间和成本消耗'''
 from Business.Equipments import EquipmentManager
-from models import Record
-from datamodels import CollectionDatas
+from models import Record,CollectionDatas
 from sqlalchemy import and_
 import threading
 import time
@@ -11,6 +10,7 @@ TIMEINTERVAL = 2 #每次循环的时间间隔
 COSTINTERVAL = 2
 
 def RecordTime():
+    '''记录设备的运行时间'''
     instance = EquipmentManager.GetInstance()
     while True:
         time.sleep(TIMEINTERVAL)
@@ -18,19 +18,20 @@ def RecordTime():
             re = Record.query.filter(
                 and_(Record.equipment_id == equipment.unique_id, Record.date == time.strftime('%Y-%m-%d'))).first()
             if not re:
-                re = Record(equipment.unique_id, 0, 0, 0, 0, 0)
+                re = Record(equipment.unique_id, 0, 0, 0, 0, 0, 0)
                 re.save()
 
             if equipment.status == "running":
                 re.run_time += TIMEINTERVAL
             elif equipment.status == "stop":
                 re.stop_time += TIMEINTERVAL
-            elif equipment.status == "exception":
+            else:
                 re.exception_time += TIMEINTERVAL
 
             re.update()
 
 def RecordCost():
+    '''记录成本消耗'''
     instance = EquipmentManager.GetInstance()
     for equipment in instance.GetAllEquipments():#初始化last_cd
         equipment.last_cd = CollectionDatas.query.filter(CollectionDatas.equipment_id == equipment.unique_id).first()

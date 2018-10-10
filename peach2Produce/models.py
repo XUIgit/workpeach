@@ -7,7 +7,6 @@ import time
 
 import datetime
 import json
-from datamodels import DevicesRunInfo
 
 
 # User类 用于登录的模型
@@ -362,20 +361,22 @@ class TechniqueInfo(db.Model):
 
 
 # 用于统计历史数据的表 ，每条记录是每一天的，通过对一列求和得到总和
-class StatisticalProduceDatas(db.Model):
+class StatisticalProduction(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     date = db.Column(db.Date, nullable=False, unique=True)
-    finiwork = db.Column(db.Integer, nullable=False)
-    cancelwork = db.Column(db.Integer, nullable=False)
+    finiProduction = db.Column(db.Integer, nullable=False)
+    waitingProduction = db.Column(db.Integer, nullable=False)
+    producingProduction = db.Column(db.Integer, nullable=False)
     procqulified = db.Column(db.Integer, nullable=False)
     procunqulified = db.Column(db.Integer, nullable=False)
     requlified = db.Column(db.Integer, nullable=False)
     reunqulified = db.Column(db.Integer, nullable=False)
 
-    def __init__(self, date, finiwork, cancelwork, procqulified, procunqulified, requlified, reunqulified):
+    def __init__(self, date, finiProduction, waitingProduction, producingProduction, procqulified, procunqulified, requlified, reunqulified):
         self.date = date
-        self.finiwork = finiwork
-        self.cancelwork = cancelwork
+        self.finiProduction = finiProduction
+        self.waitingProduction = waitingProduction
+        self.producingProduction = producingProduction
         self.procqulified = procqulified
         self.procunqulified = procunqulified
         self.requlified = requlified
@@ -385,144 +386,28 @@ class StatisticalProduceDatas(db.Model):
         db.session.add(self)
         db.session.commit()
 
-    def commit(self):
+    def update(self):
         db.session.commit()
 
 
-class StatisticalWorkTimeDatas(db.Model):
+class StatisticalWorkTime(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    devId = db.Column(db.String(16), unique=False)
-    collectorTotalNormTime = db.Column(db.Float)
-    collectorTotalStopTime = db.Column(db.Float)
-    robotTotalWorkTime = db.Column(db.Float)
-    robotTotalRestTime = db.Column(db.Float)
-    robotTotalExceptionTime = db.Column(db.Float)
+    equipment_id = db.Column(db.String(16), unique=False)
+    total_run_time = db.Column(db.Float)
+    total_exception_time = db.Column(db.Float)
+    total_stop_time = db.Column(db.Float)
 
-    def __init__(self, devId, collectorTotalNormTime, collectorTotalStopTime, robotTotalWorkTime, robotTotalRestTime,
-                 robotTotalExceptionTime):
-        self.collectorTotalNormTime = collectorTotalNormTime
-        self.collectorTotalStopTime = collectorTotalStopTime
-        self.robotTotalWorkTime = robotTotalWorkTime
-        self.robotTotalRestTime = robotTotalRestTime
-        self.robotTotalExceptionTime = robotTotalExceptionTime
-        self.devId = devId
-
-
-# 用于管理处理所有的产品质量的从统计数据
-@application.template_global()
-def getTodayEval():
-    re = StatisticalProduceDatas.query.filter(StatisticalProduceDatas.date == datetime.date.today()).first()
-    if re:
-        return re
-    else:
-        return StatisticalProduceDatas(datetime.date.today(), 0, 0, 0, 0, 0, 0)
-
-
-@application.template_global()
-def getHistoryEval():
-    query = db.session.query
-    re = query(func.sum(StatisticalProduceDatas.procqulified), func.sum(StatisticalProduceDatas.procunqulified),
-               func.sum(StatisticalProduceDatas.requlified), func.sum(StatisticalProduceDatas.reunqulified)).first()
-    if re:
-        return list(re)
-    else:
-        return [0, 0, 0, 0]
-
-
-@application.template_global()
-def getHistoryProduce():
-    re = StatisticalProduceDatas.query.all()
-    reslut = {}
-    dates = []
-    finish = []
-    cancel = []
-    for day in re:
-        finish.append(day.finiwork)
-        cancel.append(day.cancelwork)
-        dates.append(day.date.strftime('%Y-%m-%d'))
-    reslut['dates'] = dates
-    reslut['finished'] = json.dumps(finish)
-    reslut['canceled'] = json.dumps(cancel)
-    return reslut
-
-
-# 用于管理处理所有的生产效能的从统计数据
-@application.template_global()
-def getTodayRunTime():
-    re = DevicesRunInfo.query.filter(DevicesRunInfo.date == datetime.date.today()).all()
-    result = {}
-    robot = ""
-    collector = ""
-    for info in re:
-        total = info.collectorNormalTime + info.collectorStopTime
-        if total == 0:
-            total = 1
-        collector += info.devId + " " + "normal" + "\t" + str(100 * info.collectorNormalTime / total) + "%" + "\n"
-        collector += info.devId + " " + "stop" + "\t" + str(100 * info.collectorStopTime / total) + "%" + "\n"
-
-        total = info.robotWorkTime + info.robotRestTime + info.robotExceptionTime
-        if total == 0:
-            total = 1
-        robot += info.devId + " " + "work" + "\t" + str(100 * info.robotWorkTime / total) + "%" + "\n"
-        robot += info.devId + " " + "rest" + "\t" + str(100 * info.robotRestTime / total) + "%" + "\n"
-        robot += info.devId + " " + "exception" + "\t" + str(100 * info.robotExceptionTime / total) + "%" + "\n"
-    result['robot'] = robot
-    result['collector'] = collector
-    return result
-
-
-@application.template_global()
-def getHistoryRunTime():
-    re = StatisticalWorkTimeDatas.query.all()
-    result = {}
-    robot = ''
-    collector = ''
-    for info in re:
-        total = info.collectorTotalNormTime + info.collectorTotalStopTime
-        if total == 0:
-            total = 1
-        collector += info.devId + " " + "normal" + "\t" + str(100 * info.collectorTotalNormTime / total) + "%" + "\n"
-        collector += info.devId + " " + "stop" + "\t" + str(100 * info.collectorTotalStopTime / total) + "%" + "\n"
-
-        total = info.robotTotalWorkTime + info.robotTotalRestTime + info.robotTotalExceptionTime
-        if total == 0:
-            total = 1
-        robot += info.devId + " " + "work" + "\t" + str(100 * info.robotTotalWorkTime / total) + "%" + "\n"
-        robot += info.devId + " " + "rest" + "\t" + str(100 * info.robotTotalRestTime / total) + "%" + "\n"
-        robot += info.devId + " " + "exception" + "\t" + str(100 * info.robotTotalExceptionTime / total) + "%" + "\n"
-
-    result['robot'] = robot
-    result['collector'] = collector
-    return result
-
-
-# 管理设备配置的表主要是采集设备
-class DeviceInfo(db.Model):  # 先放着
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    uniqueid = db.Column(db.String(16), unique=True)
-    ip = db.Column(db.String(16), unique=False, nullable=False)
-    port = db.Column(db.Integer, nullable=False)
-    route = db.Column(db.String(64), unique=True, nullable=False)
-    type = db.Column(db.String(64), unique=False, nullable=False)
-    name = db.Column(db.String(64), nullable=False)
-    robotId = db.Column(db.String(16), nullable=True)  # 盒子连接得ROBOT desc
-    status = db.Column(db.String(16), nullable=False)  # normal delete表示设备已删除
-
-    def __init__(self, uniqueid, ip, port, type, name, robot_id, status):
-        self.uniqueid = uniqueid
-        self.ip = ip
-        self.port = port
-        self.route = str(ip) + ':' + str(port)
-        self.type = type
-        self.name = name
-        self.robotId = robot_id
-        self.status = status  # normal delete表示设备已删除
+    def __init__(self, equipment_id, total_run_time, total_exception_time, total_stop_time):
+        self.equipment_id = equipment_id
+        self.total_run_time = total_run_time
+        self.total_exception_time = total_exception_time
+        self.total_stop_time = total_stop_time
 
     def save(self):
         db.session.add(self)
         db.session.commit()
 
-    def commit(self):
+    def update(self):
         db.session.commit()
 
 
@@ -624,48 +509,6 @@ class InteractiveMessageInfo(db.Model):
 
     def commit(self):
         db.session.commit()
-
-
-# 成本消耗
-class Cost(db.Model):
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    date = db.Column(db.Date, unique=True, nullable=False)
-    power_consumption = db.Column(db.Float, unique=False, nullable=True)
-    air_consumption = db.Column(db.Float, unique=False, nullable=True)
-    welding_wire_consumption = db.Column(db.Float, unique=False, nullable=True)
-
-    def __init__(self, power_consumption, air_consumption, welding_wire_consumption):
-        self.date = datetime.date.today()
-        self.power_consumption = power_consumption
-        self.air_consumption = air_consumption
-        self.welding_wire_consumption = welding_wire_consumption
-
-    def add(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def update(self):
-        db.session.commit()
-
-
-# 获取历史的成本消耗数据
-def getHistoryCost():
-    totalCost = Cost.query.all()
-    result = {}
-    date = []
-    power = []
-    air = []
-    welding_wrie = []
-    for cost in totalCost:
-        date.append(cost.date.strftime('%Y-%m-%d'))
-        air.append(cost.air_consumption)
-        power.append(cost.power_consumption)
-        welding_wrie.append(cost.welding_wire_consumption)
-    result['air'] = air
-    result['date'] = date
-    result['power'] = power
-    result['weldingwire'] = welding_wrie
-    return result
 
 
 # agv的表
@@ -779,3 +622,41 @@ class Record(db.Model):
 
     def update(self):
         db.session.commit()
+
+
+class CollectionDatas(db.Model):
+    __mapper_args__ = {
+        "order_by": desc('time')
+    }
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    electricity = db.Column(db.Float, unique=False)
+    voltage = db.Column(db.Float, unique=False)
+    temperature = db.Column(db.Float, unique=False)
+    production_Id = db.Column(db.String(16), unique=False, nullable=True)
+    equipment_id = db.Column(db.String(16), unique=False)
+    time = db.Column(db.DateTime, unique=False, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
+    state = db.Column(db.String(16), unique=False, nullable=True)
+
+    def __init__(self, equipment_id, production_Id, electricity, voltage, temperature, state):
+        self.electricity = electricity
+        self.voltage = voltage
+        self.temperature = temperature
+
+        self.production_Id = production_Id
+        self.equipment_id = equipment_id
+        self.time = datetime.datetime.now()
+        self.state = state
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+def CollectionDataSeria(obj):
+    return {
+        'time': obj.time.strftime('%Y/%m/%d %H:%M:%S'),
+        'e': obj.electricity,
+        'v': obj.voltage,
+        't': obj.temperature,
+        'productId': obj.production_Id,
+        'produce_status': obj.state,
+    }

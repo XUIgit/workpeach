@@ -472,7 +472,7 @@ Highcharts.data({
                 // Remove special edition notes
                 name = name.split(' -')[0];
                 // 拆分
-                version = name.match(/(work)|(rest)|(exception)/);
+                version = version = name.match(/(normal)|(stop)|(exception)/);
                 if (version) {
                     version = version[0];
                 }

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from app import application
 from flask import render_template
-from models import getTodayEval,getHistoryEval,getHistoryProduce,getTodayRunTime,getHistoryRunTime,getHistoryCost
+from Business.CountStatistics import getTodayEval,getHistoryEval,getHistoryProduce,getTodayRunTime,getHistoryRunTime,getHistoryCost
 
 @application.route('/ma_producreport/qulity')
 def ma_producreport_qulity():

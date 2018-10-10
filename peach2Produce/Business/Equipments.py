@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from app import db,application
-from models import EquipmentInfo
-from datamodels import CollectionDatas
+from models import EquipmentInfo,CollectionDatas
 import socket
 import time
 import datetime
